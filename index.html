@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecasting Tool</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Forecasting Tool</h1>
+        <p>Upload historical data (CSV) to forecast email/message volume.</p>
+
+        <!-- File Upload -->
+        <input type="file" id="upload-file" accept=".csv" />
+        <button onclick="processFile()">Generate Forecast</button>
+
+        <!-- Chart Container -->
+        <canvas id="forecastChart"></canvas>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
