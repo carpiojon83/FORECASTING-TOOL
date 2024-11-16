@@ -1,59 +1,78 @@
-function processFile() {
-    const fileInput = document.getElementById("upload-file");
-    const file = fileInput.files[0];
+function generateForecast() {
+    // Get input values
+    const eventName = document.getElementById("event-name").value;
+    const eventDate = new Date(document.getElementById("event-date").value);
+    const dailySignupsInput = document.getElementById("daily-signups").value;
+    const dailyEmailsInput = document.getElementById("daily-emails").value;
 
-    if (!file) {
-        alert("Please upload a CSV file.");
+    if (!eventName || !eventDate || !dailySignupsInput || !dailyEmailsInput) {
+        alert("Please fill out all fields.");
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const content = e.target.result;
-        const data = parseCSV(content);
-        generateForecast(data);
-    };
-    reader.readAsText(file);
+    // Parse input data
+    const dailySignups = dailySignupsInput.split(",").map(Number);
+    const dailyEmails = dailyEmailsInput.split(",").map(Number);
+
+    if (dailySignups.length !== dailyEmails.length) {
+        alert("Sign-ups and email volumes must have the same number of days.");
+        return;
+    }
+
+    // Forecasting setup
+    const forecastedEmails = [];
+    const staffNeeded = [];
+    const labels = [];
+    const totalDays = dailySignups.length;
+    const growthRate = 1.05; // 5% growth factor for sign-ups affecting emails
+    const emailsPerStaff = 50; // Staff SLA: One person handles 50 emails/day
+
+    let currentEmails = dailyEmails[dailyEmails.length - 1];
+    let daysUntilEvent = Math.ceil((eventDate - new Date()) / (1000 * 60 * 60 * 24));
+
+    for (let i = 0; i < daysUntilEvent; i++) {
+        const forecastFactor = dailySignups[Math.min(i, totalDays - 1)] * growthRate;
+        currentEmails += forecastFactor;
+        forecastedEmails.push(Math.round(currentEmails));
+        staffNeeded.push(Math.ceil(currentEmails / emailsPerStaff));
+
+        // Format dates as MMM-DD-YYYY
+        const forecastDate = new Date();
+        forecastDate.setDate(forecastDate.getDate() + i);
+        labels.push(forecastDate.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }));
+    }
+
+    // Display charts
+    displayChart("Forecasted Emails", labels, forecastedEmails, "forecastChart", "blue");
+    displayChart("Staff Needed (SLA)", labels, staffNeeded, "staffingChart", "green");
 }
 
-function parseCSV(content) {
-    const rows = content.split("\n");
-    const data = rows.slice(1).map(row => {
-        const [date, volume] = row.split(",");
-        return { date, volume: parseFloat(volume) };
-    });
-    return data;
-}
-
-function generateForecast(data) {
-    const labels = data.map(item => item.date);
-    const volumes = data.map(item => item.volume);
-
-    const forecast = volumes.map((value, index) => {
-        const growthRate = 1.05; // Assume 5% growth
-        return index === 0 ? value : volumes[index - 1] * growthRate;
-    });
-
-    const ctx = document.getElementById("forecastChart").getContext("2d");
+function displayChart(title, labels, data, chartId, color) {
+    const ctx = document.getElementById(chartId).getContext("2d");
     new Chart(ctx, {
         type: "line",
         data: {
-            labels,
+            labels: labels,
             datasets: [
                 {
-                    label: "Actual Volumes",
-                    data: volumes,
-                    borderColor: "blue",
-                    fill: false
+                    label: title,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color,
+                    fill: false,
+                    tension: 0.1,
                 },
-                {
-                    label: "Forecasted Volumes",
-                    data: forecast,
-                    borderColor: "green",
-                    borderDash: [5, 5],
-                    fill: false
-                }
-            ]
-        }
+            ],
+        },
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: title,
+                    font: { size: 16 },
+                },
+            },
+            responsive: true,
+        },
     });
 }
